@@ -1,0 +1,91 @@
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE FlexibleInstances #-}
+
+module SiliciumGhcAutopsiaCorrigida where
+
+import Data.Complex
+
+-- | A afirmação indecidível - SEM Eq, intencionalmente
+data GodelStatement = GodelStatement
+  { godelId   :: Integer
+  , godelText :: String
+  }
+  deriving Show
+  -- Eq deliberadamente ausente - este é o "ponto de Gödel"
+
+-- | Sistema de tipos que REFLETE a (in)decidibilidade
+data SValor where
+  -- Valores decidíveis (têm Eq)
+  SReal      :: Double -> SValor
+  SComplex   :: Complex Double -> SValor
+  
+  -- Valor indecidível - NÃO pode ter Eq derivado automaticamente
+  SGodel     :: GodelStatement -> SValor
+  
+  -- Caso especial de indecidibilidade
+  SIndeterminado :: SValor
+
+-- | Instância de Eq MANUAL que lida explicitamente com a indecidibilidade
+instance Eq SValor where
+  -- Casos decidíveis
+  SReal a        == SReal b        = a == b
+  SComplex a     == SComplex b     = a == b
+  SIndeterminado == SIndeterminado = True  -- Convenção
+  
+  -- O PONTO DE GÖDEL: afirmações indecidíveis NÃO são comparáveis
+  SGodel _       == SGodel _       = False  -- Intencionalmente falso
+  _              == _              = False  -- Qualquer mistura é falsa
+
+-- | Instância de Show que respeita a hierarquia de (in)decidibilidade
+instance Show SValor where
+  show (SReal x)      = "SReal " ++ show x
+  show (SComplex x)   = "SComplex " ++ show x
+  show (SGodel g)     = "SGodel " ++ show (godelId g) ++ ": " ++ godelText g
+  show SIndeterminado = "SIndeterminado"
+
+-- | Demonstração: o que acontece quando tentamos comparar o incomparável
+demonstrarParadoxo :: IO ()
+demonstrarParadoxo = do
+  let g1 = SGodel (GodelStatement 1 "Esta afirmação é falsa")
+      g2 = SGodel (GodelStatement 1 "Esta afirmação é falsa")
+      r1 = SReal 3.14
+      r2 = SReal 3.14
+  
+  putStrLn "╔════════════════════════════════════════════╗"
+  putStrLn "║   DEMONSTRAÇÃO DO PARADOXO NO SISTEMA      ║"
+  putStrLn "╚════════════════════════════════════════════╝"
+  putStrLn ""
+  
+  putStrLn "1. COMPARAÇÃO DE VALORES DECIDÍVEIS:"
+  putStrLn $ "   " ++ show r1 ++ " == " ++ show r2 ++ " ?"
+  putStrLn $ "   → " ++ show (r1 == r2) ++ " (✓ decidível)"
+  
+  putStrLn "\n2. TENTATIVA DE COMPARAR AFIRMAÇÕES GÖDELIANAS:"
+  putStrLn $ "   " ++ show g1 ++ "\n   ==\n   " ++ show g2 ++ " ?"
+  putStrLn $ "   → " ++ show (g1 == g2) ++ " (✗ indecidível)"
+  
+  putStrLn "\n3. COMPARAÇÃO CRUZADA (DECIDÍVEL vs INDECIDÍVEL):"
+  putStrLn $ "   " ++ show r1 ++ " == " ++ show g1 ++ " ?"
+  putStrLn $ "   → " ++ show (r1 == g1) ++ " (✗ incomparável)"
+  
+  putStrLn "\n╔════════════════════════════════════════════╗"
+  putStrLn "║   CONCLUSÃO METALINGUÍSTICA:               ║"
+  putStrLn "║                                            ║"
+  putStrLn "║   O compilador NÃO 'recusou' Gödel.       ║"
+  putStrLn "║                                            ║"
+  putStrLn "║   Ele nos FORÇOU a declarar explicitamente║"
+  putStrLn "║   a indecidibilidade no sistema de tipos. ║"
+  putStrLn "╚════════════════════════════════════════════╝"
+
+-- | Teorema: No SiliciumField, células com SGodel são
+--   intrinsecamente incomparáveis - um "Ponto de Gödel" no campo
+teoremaGodelianoSilicium :: SValor -> SValor -> Maybe Bool
+teoremaGodelianoSilicium (SGodel _) (SGodel _) = Nothing  -- Indecidível
+teoremaGodelianoSilicium a b = Just (a == b)               -- Decidível
+
+main :: IO ()
+main = do
+  putStrLn "EMPIRE SILICIUM: AUTÓPSIA DO PONTO DE GÖDEL"
+  putStrLn "============================================\n"
+  demonstrarParadoxo
